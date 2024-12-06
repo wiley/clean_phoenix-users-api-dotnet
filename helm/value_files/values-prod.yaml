@@ -1,0 +1,82 @@
+# Default values for users-api
+# This file is in YAML format
+# Declared variables to be passed into $/templates files
+
+appName: users-api
+
+image:
+  repository: 988207228673.dkr.ecr.eu-central-1.amazonaws.com/phoenix-users-api
+  tag: prod
+  pullPolicy: Always
+
+imagePullSecrets: []
+
+service:
+  type: NodePort
+  port: 80
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+# replicacount has no impact if autoscaling.enabled = true
+replicacount: 1
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 85
+
+dns:
+  internal: prod.sgp.private.wiley.host
+  external: prod.sgp.wiley.host
+
+env_vars:
+  aspnetcore_environment: prod
+  log:
+    json: true
+    minimumlevel: Warning
+  kafka:
+    topic: WLS.UserAPI.User
+    host: b-1.eksprodeu.5cp134.c8.kafka.eu-central-1.amazonaws.com:9092,b-2.eksprodeu.5cp134.c8.kafka.eu-central-1.amazonaws.com:9092
+  redis_host: eks-prod-eu-redis-cluster.tp1vge.ng.0001.euc1.cache.amazonaws.com,abortConnect=false
+  keycloak:
+    baseUrl: https://keycloak.prod.sgp.wiley.host
+    realm: phoenix
+    usersUrl: https://keycloak.prod.sgp.wiley.host/admin/realms/phoenix/users
+    tokenUrl: https://keycloak.prod.sgp.wiley.host/realms/phoenix/protocol/openid-connect/token
+    clientId: user-admin
+    publicClientId: frontend-client
+    audiente: account
+  email_api:
+    baseUrl: https://sgpemail-api.prod.sgp.wiley.host
+  learner_email_api:
+    baseUrl: https://sgpemail-api.prod.sgp.wiley.host
+  opa_base_url: http://opa/
+
+externalsecrets:
+  refreshInterval: 1m
+  secretCreationPolicy: Owner
+  secretStoreName: eks-prod-eu-secret-manager
+  secretStoreType: ClusterSecretStore
+  data:
+  - keyValue: eks/phoenix
+    nameValue: KEYCLOAK_SECRET
+    propertyValue: KEYCLOAK_SECRET
+  - keyValue: eks/phoenix
+    nameValue: KEYCLOAK_PASSWORD_SALT
+    propertyValue: KEYCLOAK_PASSWORD_SALT
+  - keyValue: eks/phoenix
+    nameValue: EMAILER_API_TOKEN
+    propertyValue: EMAILER_API_TOKEN
+  - keyValue: eks/phoenix
+    nameValue: API_KEY
+    propertyValue: USERS_API_KEY
+  - keyValue: eks/phoenix
+    nameValue: USERSAPI_CONNECTION_STRING
+    propertyValue: USERSAPI_CONNECTION_STRING

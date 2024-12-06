@@ -1,0 +1,70 @@
+{
+  "profiles": {
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "launchBrowser": true,
+      "launchUrl": "https://localhost:44398/swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "https://localhost:44398;http://localhost:8080/",
+        "REDIS_SERVER_CONNECTION": "redis.dev.darwin.private.wiley.host:6379",
+        "KAFKA_HOST": "kafka.dev.darwin.private.wiley.host:9092",
+        "KAFKA_TOPIC": "WLS.UserAPI.User",
+        "KEYCLOAK_USERS_URL": "https://keycloak.nonprod.darwin.wiley.host/admin/realms/darwin/users",
+        "KEYCLOAK_TOKEN_URL": "https://keycloak.nonprod.darwin.wiley.host/realms/darwin/protocol/openid-connect/token",
+        "KEYCLOAK_CLIENT_ID": "user-admin",
+        "KEYCLOAK_SECRET": "<KEYCLOAK SECRET>",
+        "KEYCLOAK_PASSWORD_SALT": "<PASSWORD SALT>",
+        "KEYCLOAK_PUBLIC_CLIENT_ID": "frontend-client",
+        "EMAILER_API_TOKEN": "<EMAIL API TOKEN>",
+        "EMAIL_API_BASE_URL": "https://sgpemail-api.nonprod.darwin.wiley.host",
+        "KEYCLOAK_BASE_URL": "https://keycloak.nonprod.darwin.wiley.host",
+        "KEYCLOAK_AUDIENCE": "account",
+        "KEYCLOAK_REALM": "darwin",
+        "API_KEY": "<API_KEY>",
+        "OPA_BASE_URL": "https://opa.nonprod.darwin.wiley.host"
+      }
+    },
+    "WLSUser": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "https://localhost:44398/swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "https://localhost:44398;http://localhost:8080/",
+        "REDIS_SERVER_CONNECTION": "redis.dev.darwin.private.wiley.host:6379",
+        "KAFKA_HOST": "kafka.dev.darwin.private.wiley.host:9092",
+        "KAFKA_TOPIC": "WLS.UserAPI.User",
+        "KEYCLOAK_USERS_URL": "https://keycloak.nonprod.darwin.wiley.host/admin/realms/darwin/users",
+        "KEYCLOAK_TOKEN_URL": "https://keycloak.nonprod.darwin.wiley.host/realms/darwin/protocol/openid-connect/token",
+        "KEYCLOAK_CLIENT_ID": "user-admin",
+        "KEYCLOAK_SECRET": "<KEYCLOAK SECRET>",
+        "KEYCLOAK_PASSWORD_SALT": "<PASSWORD SALT>",
+        "KEYCLOAK_PUBLIC_CLIENT_ID": "frontend-client",
+        "EMAILER_API_TOKEN": "<EMAIL API TOKEN>",
+        "EMAIL_API_BASE_URL": "https://sgpemail-api.nonprod.darwin.wiley.host",
+
+        "KEYCLOAK_BASE_URL": "https://keycloak.nonprod.darwin.wiley.host",
+        "KEYCLOAK_AUDIENCE": "account",
+        "KEYCLOAK_REALM": "darwin",
+        "API_KEY": "<API_KEY>",
+        "OPA_BASE_URL": "https://opa.nonprod.darwin.wiley.host"
+      },
+      "applicationUrl": "https://localhost:44398;http://localhost:8080/"
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "launchBrowser": true,
+      "launchUrl": "http://localhost:50103/swagger",
+      "distributionName": ""
+    }
+  },
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:59165/",
+      "sslPort": 44398
+    }
+  }
+}

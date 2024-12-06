@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  users-api:
+    build:
+      context: .
+    volumes:
+      - "..:/app"
+      - "/app/run"
+      #uses app settings for dev environment configured in wls-ip-localenv
+      - "${LOCAL_ENV_PATH:-../../..}/phoenix/data/usersapi/users-api.appsettings.json:/app/WLSUser/appsettings.Development.json"
+      - "../usersapi.pem:/app/WLSUser/usersapi.pem"
+      - nuget_packages:/nuget_packages
+      - nuget_cache:/nuget_cache
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:50103/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+    working_dir: /app
+    entrypoint: "/app/run/entrypoint.dev.sh"

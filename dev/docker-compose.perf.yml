@@ -1,0 +1,38 @@
+version: '3.8'
+
+include:
+  - docker-compose.base.yml
+
+# run using docker-compose -f dev/docker-compose.perf.yml up
+services:
+  users-api:
+    extends:
+      file: docker-compose.lib.yml
+      service: users-api
+    environment:
+      - BUILD=1
+    ports:
+      - "50103:50103"
+    volumes:
+      - "./entrypoint.perf.sh:/app/run/entrypoint.perf.sh"
+    entrypoint: "/app/run/entrypoint.perf.sh"
+
+  users-api-perf:
+    extends:
+      file: docker-compose.lib.yml
+      service: users-api
+    depends_on:
+      users-api:
+        condition: service_healthy
+    volumes:
+      - "./entrypoint.perf.sh:/app/run/entrypoint.perf.sh"
+    entrypoint: "/app/run/entrypoint.perf.sh"
+    deploy:
+      replicas: 5
+    ports:
+      - "50104-50109:50103"
+
+networks:
+  default:
+    name: crossknowledge-network
+    external: true

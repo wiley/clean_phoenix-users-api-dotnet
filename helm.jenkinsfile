@@ -1,0 +1,437 @@
+def buildImg = true
+def revision = ""
+def git_id = ""
+def addBuildInfo(userName, revision) {
+  String summaryHtml = """
+    <b>Trigger Type : </b>CI/CD<br/>
+    <b>GIT User : </b>${userName}<br/>
+    <b>GitHub Commit Revision : </b>${revision}<br/>
+  """
+  removeHtmlBadges id: "htmlBadge${currentBuild.number}"
+  addHtmlBadge html: summaryHtml, id: "htmlBadge${currentBuild.number}"
+}
+def setCommitStatus(sha, status, description, context) {
+    sh(script: '''#!/bin/bash
+                  curl -X POST \
+                  -H "Accept: application/vnd.github+json" \
+                  -H "Authorization: Bearer $COMMIT_STATUS_KEY" \
+                  -d '{"state":"'''+status+'''","target_url":"'''+BUILD_URL+'''","description":"'''+description+'''","context":"continuous-integration/'''+context+'''"}' \
+                  https://api.github.com/repos/wiley/wls-usersapi/statuses/'''+sha+'''
+                ''', returnStatus: true)
+}
+
+pipeline {
+    agent {
+        node {
+            label 'wls-utility-docker'
+        }
+    }
+    parameters {
+        choice (
+            name: 'PARAM_ENV',
+            description: 'Environment to be deployed',
+            choices: ['nonprod', 'local', 'prod', 'qe01', 'qe02', 'qe03', 'qe04', 'qe05']
+        )
+        gitParameter (
+            name: 'PARAM_TAG',
+            description: 'Release to deploy',
+            selectedValue: 'TOP',
+            branchFilter: '.*',
+            quickFilterEnabled: true,
+            sortMode: 'DESCENDING_SMART',
+            type: 'PT_BRANCH_TAG'
+        )
+        booleanParam (
+            name: 'PARAM_FORCE',
+            defaultValue: false,
+            description: 'Force build even if valid image exists in repository'
+        )
+        booleanParam (
+            name: 'PARAM_DEPLOY',
+            defaultValue: true,
+            description: 'Run helm deploy'
+        )
+        booleanParam (
+            name: 'Run Automated Tests',
+            defaultValue: true,
+            description: 'Execute Unit, Integration and E2E Regression Tests'
+        )
+    }
+    environment {
+        AGENT = sh (
+            script: '''
+                case $PARAM_ENV in
+                    'prod')
+                        echo 'wls-prod-docker'
+                    ;;
+                    *)
+                        echo 'wls-utility-docker'
+                    ;;
+                esac
+            ''',
+            returnStdout: true
+        ).trim()
+        NAMESPACE = sh (
+            script: '''
+                echo "${PARAM_ENV}"
+            ''',
+            returnStdout: true
+        ).trim()
+        REGISTRY = sh (
+            script: '''
+                case $PARAM_ENV in
+                    'prod')
+                        echo '563027668360.dkr.ecr.us-east-1.amazonaws.com'
+                    ;;
+                    *)
+                        echo '929380036510.dkr.ecr.us-east-1.amazonaws.com'
+                    ;;
+                esac
+            ''',
+            returnStdout: true
+        ).trim()
+        REG_PROMOTE = sh (
+            script: '''
+                case $PARAM_ENV in
+                    'prod')
+                        echo '929380036510.dkr.ecr.us-east-1.amazonaws.com'
+                    ;;
+                esac
+            ''',
+            returnStdout: true
+        ).trim()
+        CLUSTER = sh (
+            script: '''
+                case $PARAM_ENV in
+                    'prod')
+                        echo 'wls-prod-us-east-1'
+                    ;;
+                    *)
+                        echo 'wls-nprd-us-east-1'
+                    ;;
+                esac
+            ''',
+            returnStdout: true
+        ).trim()
+        VALUE_FILE= sh (
+            script: '''
+                case $PARAM_ENV in
+                    qe*)
+                        echo 'qe'
+                    ;;
+                    *)
+                        echo "${PARAM_ENV}"
+                    ;;
+                esac
+            ''',
+            returnStdout: true
+        ).trim()
+        REGION    = 'us-east-1'
+        CONTAINER = 'users-api'
+        FOLDER    = 'WLSUser'
+        HELM_DIR  = 'helm'
+        COMMIT_STATUS_KEY = credentials('wmuser-ck-github-token')
+    }
+    options {
+        timestamps ()
+    }
+    stages {
+        stage ('Setting Agent') {
+            agent {
+                node {
+                    label "${env.AGENT}"
+                }
+            }
+            stages {
+                stage('Checkout from SCM') {
+                    when {
+                        expression { return currentBuild.currentResult == 'SUCCESS' }
+                    }
+                    steps {
+                        echo "Checking out ${PARAM_TAG}"
+                        checkout(
+                            changelog: true,
+                            scm: [
+                                $class: 'GitSCM',
+                                branches: [[name: '${PARAM_TAG}']],
+                                doGenerateSubmoduleConfigurations: scm.doGenerateSubmoduleConfigurations,
+                                extensions: scm.extensions,
+                                submoduleCfg: scm.submoduleCfg,
+                                userRemoteConfigs: scm.userRemoteConfigs
+                            ]
+                        )
+                        script {
+                            currentBuild.displayName = "env: ${PARAM_ENV}  ver: ${PARAM_TAG}"
+                            try {
+                                revision = sh(script: 'git rev-parse HEAD ', returnStdout: true)
+                                addBuildInfo(gitusername,revision)
+                                setCommitStatus(revision, "pending", "Build in progress", "jenkins-job-build")
+                                git_id = gitusername
+                                echo "Triggered by continious integration..."
+                            } catch (e) {
+                                echo "build triggered conventionally..."
+                            }        
+                        }  
+                    }
+                }
+                stage ('Checking image') {
+                    when {
+                        allOf {
+                            expression { return currentBuild.currentResult == 'SUCCESS' }
+                            not { expression { return params.PARAM_FORCE.toBoolean() } }
+                        }
+                    }
+                    steps {
+                        echo "Looking for image in ${REGISTRY}"
+                        script {
+                            try {
+                                sh 'docker manifest inspect ${REGISTRY}/${CONTAINER}:${PARAM_TAG} > /dev/null'
+                                echo "Found valid image for ${REGISTRY}/${CONTAINER}:${PARAM_TAG}... continuing."
+                                buildImg = false
+                            }
+                            catch (ex) {
+                                echo "Unable to find valid image for ${REGISTRY}/${CONTAINER}:${PARAM_TAG}."
+                            }
+                        }
+                    }
+                }
+                stage ('Promote Image') {
+                    when {
+                       allOf {
+                            expression { return currentBuild.currentResult == 'SUCCESS' }
+                            expression { env.REG_PROMOTE != null }
+                            not { expression { return params.PARAM_FORCE.toBoolean() } }
+                            expression { return buildImg.toBoolean() }
+                        }
+                    }
+                    steps {
+                        echo "Trying to promote from ${REG_PROMOTE}/${CONTAINER} to ${REGISTRY}/${CONTAINER}"
+                        script {
+                            try {
+                                echo "buildImg = ${buildImg}"
+                                sh 'docker manifest inspect ${REG_PROMOTE}/${CONTAINER}:${PARAM_TAG} > /dev/null'
+                                sh '''
+                                    echo "Found valid image for ${REG_PROMOTE}/${CONTAINER}:${PARAM_TAG}... attempting to promote."
+                                    docker pull ${REG_PROMOTE}/${CONTAINER}:${PARAM_TAG}
+                                    docker tag ${REG_PROMOTE}/${CONTAINER}:${PARAM_TAG} ${REGISTRY}/${CONTAINER}:${PARAM_TAG}
+                                    docker push ${REGISTRY}/${CONTAINER}:${PARAM_TAG}
+                                '''
+                                echo 'Promotion complete'
+                                buildImg = false
+                            }
+                            catch (ex) {
+                                echo "Unable to promote image from ${REG_PROMOTE}/${CONTAINER}."
+                                echo "Will attempt to build."
+                            }
+                        }
+                    }
+                }
+                stage ('Build') {
+                    when {
+                        allOf {
+                            expression { return currentBuild.currentResult == 'SUCCESS' }
+                            anyOf {
+                                expression { return params.PARAM_FORCE.toBoolean() }
+                                expression { return buildImg.toBoolean() }
+                            }
+                        }
+                    }
+                    stages {
+                        stage ('Build & Unit Test') {
+                                parallel {
+                                    stage ('Test') {
+                                        when {
+                                            expression { return currentBuild.currentResult == 'SUCCESS' }
+                                            expression { return params['Run Automated Tests'].toBoolean() }
+                                        }
+                                        steps {
+                                            withCredentials([usernamePassword(credentialsId: 'wileyartifactory', usernameVariable: 'ART_USER', passwordVariable: 'ART_PASS')]) {
+                                                sh 'docker build --build-arg ART_USER=${ART_USER} --build-arg ART_PASS=${ART_PASS} -t ${CONTAINER}-test -f "${WORKSPACE}/${FOLDER}.Tests/Dockerfile" .'
+                                            }
+                                            script {
+                                                try {
+                                                    sh 'docker run -i --rm --name ${CONTAINER}-test -e "DOMAIN=\"\"" -e "ASPNETCORE_ENVIRONMENT=Staging" -v "${WORKSPACE}/logs":/logs ${CONTAINER}-test dotnet test ${FOLDER}.Tests --logger "junit;LogFilePath=/logs/api-results.xml" -c Release --no-build --no-restore'
+                                                }
+                                                catch (exc) {
+                                                    echo 'api testing failed... setting to UNSTABLE!'
+                                                    setCommitStatus(
+                                                        revision,
+                                                        "failure",
+                                                        "Unit Tests Failed",
+                                                        "jenkins-unit-tests"
+                                                    )
+                                                    currentBuild.result = 'UNSTABLE'
+                                                }
+                                                finally {
+                                                    junit(testResults: 'logs/*.xml', allowEmptyResults: true)
+                                                }
+                                                if(currentBuild.currentResult == 'SUCCESS'){
+                                                    setCommitStatus(
+                                                        revision,
+                                                        "success",
+                                                        "Unit Tests passed",
+                                                        "jenkins-unit-tests"
+                                                    )
+                                                }
+                                            }
+                                    }
+                                }
+                                stage ('Build') {
+                                    when {
+                                        allOf {
+                                            expression { return currentBuild.currentResult == 'SUCCESS' }
+                                            expression { return git_id == "" }
+                                        }
+                                    }
+                                    steps {
+                                        withCredentials([usernamePassword(credentialsId: 'wileyartifactory', usernameVariable: 'ART_USER', passwordVariable: 'ART_PASS')]) {
+                                            sh 'docker build --build-arg ART_USER=${ART_USER} --build-arg ART_PASS=${ART_PASS} -t ${REGISTRY}/${CONTAINER}:${PARAM_TAG} -f "${WORKSPACE}/${FOLDER}/Dockerfile" .'
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        stage ('Push') {
+                            when {
+                                allOf {
+                                    expression { return currentBuild.currentResult == 'SUCCESS' }
+                                    expression { return git_id == "" }
+                                }
+                            }
+                            steps {
+                                sh 'docker push ${REGISTRY}/${CONTAINER}:${PARAM_TAG}'
+                            }
+                        }
+                    }
+                }
+                stage ('Regression_Local_Enviroment') {
+                    when {
+                        allOf {
+                            expression { return params['PARAM_ENV'] == 'local' }
+                            expression { return params['Run Automated Tests'].toBoolean() }
+                            expression { return currentBuild.currentResult == 'SUCCESS' }
+                            expression { return git_id == "" }
+                        }
+                    }
+                    steps {
+                        script {
+                            build job: 'QE/Automated_Regression_Assessments', parameters: [
+                            string(name: 'Developer Mode', value: "DISABLED"),	
+                            string(name: 'Target Environment', value: "local"),
+                            string(name: 'Execution Strategy', value: "FULL"),
+                            string(name: 'app_name', value: "Darwin_Catalyst"),
+                            string(name: 'build_name', value: "Users API ${PARAM_TAG}"),
+                            string(name: 'Test Run Name', value: "${PARAM_TAG}"),
+                            string(name: 'upstream_repo', value: env.GIT_URL.replaceFirst(/^.*\/([^\/]+?).git$/, '$1')),
+                            string(name: 'upstream_revision', value: sh(script: 'git rev-parse HEAD ', returnStdout: true)),
+                            string(name: 'local_env_var', value: "USERS_API_IMAGE_TAG"),
+                            string(name: 'local_env_val', value: "${PARAM_TAG}")],
+                            propagate: false,
+                            wait: false
+                        }
+                    }
+                }
+                stage ('Configure Helm') {
+                    when {
+                        allOf {
+                            expression { return params['PARAM_ENV'] != 'local' }
+                            expression { return currentBuild.currentResult == 'SUCCESS' }
+                            expression { return params.PARAM_DEPLOY.toBoolean() }
+                        }
+                    }
+                    steps {
+                        echo 'Verifying helm installation'
+                        script {
+                            try {
+                                sh "helm version --template='helm {{.Version}} already installed.'"
+                            }
+                            catch (ex) {
+                                sh '''
+                                    curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+                                    chmod +x get_helm.sh
+                                    ./get_helm.sh
+                                '''
+                                sh "helm version --template='helm {{.Version}} installed.'"
+                            }
+                        }
+                        echo 'Updating kubeconfig'
+                        sh "aws eks update-kubeconfig --name ${CLUSTER} --region ${REGION}"
+                    }
+                }
+                stage ('Set Variables') {
+                    when {
+                        allOf {
+                            expression { return params['PARAM_ENV'] != 'local' }
+                            expression { return currentBuild.currentResult == 'SUCCESS' }
+                            expression { return git_id == "" }
+                        }
+                    }
+                    steps {
+                        sh '''
+                            echo "Using helm chart located in ./$HELM_DIR"
+                            echo "Updating appVersion in Chart.yaml to ${PARAM_TAG}"
+                            sed -i "s/appVersion:.*/appVersion: \"$PARAM_TAG\"/" ./$HELM_DIR/Chart.yaml
+                            echo "Writing current.yaml"
+                            cat << EOF > ./$HELM_DIR/value_files/current.yaml
+image:
+  repository: ${REGISTRY}/${CONTAINER}
+  tag: ${PARAM_TAG}
+EOF
+'''
+                    }
+                }
+                stage  ('Deploy') {
+                    when {
+                        allOf {
+                            expression { return params['PARAM_ENV'] != 'local' }
+                            expression { return currentBuild.currentResult == 'SUCCESS' }
+                            expression { return params.PARAM_DEPLOY.toBoolean() }
+                        }
+                    }
+                    steps {
+                        sh '''cat << EOF
+Attempting to deploy to...
+container: ${CONTAINER}
+    build: ${PARAM_TAG}
+      k8s: ${CLUSTER}
+namespace: ${NAMESPACE}
+EOF
+'''
+                        sh "helm upgrade --install ${CONTAINER} --namespace ${NAMESPACE} --wait --atomic --timeout 10m ./${HELM_DIR} -f ./${HELM_DIR}/value_files/${VALUE_FILE}.yaml -f ./${HELM_DIR}/value_files/current.yaml"
+                        sh "helm list --namespace ${NAMESPACE} --filter ${CONTAINER}"
+                    }
+                }
+                }
+            }
+        }
+    post {
+        success {
+            echo 'Build completed successfully'
+            setCommitStatus(revision, "success", "Build completed with success", "jenkins-job-build")
+            script{
+                if(params['PARAM_ENV'] == 'prod')
+                {
+                    withCredentials([string(credentialsId: 'wmuser-ck-github-token', variable: 'token')]) {
+                        r = sh script: """ curl -L -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${token}" https://api.github.com/repos/wiley/\$(git ls-remote --get-url | xargs basename -s .git)/releases/tags/${PARAM_TAG} """, returnStdout: true
+                        Map _release_ = readJSON(text: r)
+                        office365ConnectorSend webhookUrl: "${PROD_HOOK_STATUS}",
+                        message: "## [${_release_['tag_name']}](${_release_['html_url']}) \n ## ${_release_['name']} \n ## Author: ${_release_['author']['login']} \n ${_release_['body']} \n ## Release created from: ${_release_['target_commitish']}",
+                        status: "Success"        
+                    }
+                    sh "echo '${PARAM_TAG}' | aws s3 cp - s3://wls-build-resources/qe/prod_tag_releases/USERS_API_IMAGE_TAG.txt"
+                }
+            }
+        }
+        unstable {
+            echo 'Build completed but is unstable'
+            setCommitStatus(revision, "failure", "Build is unstable", "jenkins-job-build")
+        }
+        failure {
+            echo 'Build failed'
+            setCommitStatus(revision, "failure", "Build failed", "jenkins-job-build")
+        }
+        always {
+            echo 'Always do this'
+        }
+    }
+}

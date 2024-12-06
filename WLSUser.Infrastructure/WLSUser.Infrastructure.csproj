@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Migrations\20220920195642_ConvertUserIdToIdentityColumn.cs" />
+    <Compile Remove="Migrations\20220920195642_ConvertUserIdToIdentityColumn.Designer.cs" />
+    <Compile Remove="Migrations\20220920203002_ConvertUserIdToIdentityColumn.cs" />
+    <Compile Remove="Migrations\20220920203002_ConvertUserIdToIdentityColumn.Designer.cs" />
+    <Compile Remove="Migrations\20220920203918_ConvertUserIdToIdentityColumn.cs" />
+    <Compile Remove="Migrations\20220920203918_ConvertUserIdToIdentityColumn.Designer.cs" />
+    <Compile Remove="Migrations\20220921151137_UpdateUserIdToIdentityColumn.cs" />
+    <Compile Remove="Migrations\20220921151137_UpdateUserIdToIdentityColumn.Designer.cs" />
+    <Compile Remove="Migrations\20220921203631_UpdateUserIdToIdentityColumn.cs" />
+    <Compile Remove="Migrations\20220921203631_UpdateUserIdToIdentityColumn.Designer.cs" />
+    <Compile Remove="Migrations\20220922200752_UpdateUserIdToPrimaryKey.cs" />
+    <Compile Remove="Migrations\20220922200752_UpdateUserIdToPrimaryKey.Designer.cs" />
+    <Compile Remove="Migrations\20220922213718_ReseedUserID.cs" />
+    <Compile Remove="Migrations\20220922213718_ReseedUserID.Designer.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.2.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="6.0.12" />
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="6.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WLSUser.Domain\WLSUser.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,15 @@
+@startuml
+!theme bluegray
+entity Federations {
++Id: int
++Name: str
++OpenidAuthInitUrl: str
++OpenidTokenUrl: str
++OpenidClientId: str   
++OpenidClientSecret: str   
++RedirectUri: str
++OrganizationId: str
++AlmFederationName: str -- this is for federations that are brokered by the ALM
++EmailDomain: str  -- temporary if we want to have domain detection in the future
+}
+@enduml

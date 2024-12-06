@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.appName }}-env
+  namespace: {{ .Release.Namespace }}
+data:
+  {{- if .Values.env_vars.aspnetcore_environment }}
+  ASPNETCORE_ENVIRONMENT: "{{ .Values.env_vars.aspnetcore_environment }}"
+  {{ else }}
+  ASPNETCORE_ENVIRONMENT:  "{{ .Release.Namespace }}"
+  {{ end }}
+  DOMAIN: "{{ .Values.appName }}.{{ .Release.Namespace }}.{{ .Values.dns.external }}"
+  LOG_JSON: "{{ .Values.env_vars.log.json }}"
+  LOG_MINIMUMLEVEL: "{{ .Values.env_vars.log.minimumlevel }}"
+  KAFKA_TOPIC: "{{ .Values.env_vars.kafka.topic }}"
+  KAFKA_HOST: "{{ .Values.env_vars.kafka.host }}"
+  REDIS_SERVER_CONNECTION: "{{ .Values.env_vars.redis_host }}"
+  KEYCLOAK_BASE_URL: "{{ .Values.env_vars.keycloak.baseUrl }}"
+  KEYCLOAK_REALM: "{{ .Values.env_vars.keycloak.realm }}"
+  KEYCLOAK_USERS_URL: "{{ .Values.env_vars.keycloak.usersUrl }}"
+  KEYCLOAK_TOKEN_URL: "{{ .Values.env_vars.keycloak.tokenUrl }}"
+  KEYCLOAK_CLIENT_ID: "{{ .Values.env_vars.keycloak.clientId }}"
+  KEYCLOAK_PUBLIC_CLIENT_ID: "{{ .Values.env_vars.keycloak.publicClientId }}"
+  KEYCLOAK_AUDIENCE: "{{ .Values.env_vars.keycloak.audiente }}"
+  EMAIL_API_BASE_URL: "{{ .Values.env_vars.email_api.baseUrl }}"
+  LEARNER_EMAIL_API_BASE_URL: "{{ .Values.env_vars.learner_email_api.baseUrl }}"
+  OPA_BASE_URL: "{{ .Values.env_vars.opa_base_url }}"

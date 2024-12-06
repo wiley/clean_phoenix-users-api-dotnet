@@ -1,0 +1,20 @@
+{{- if .Values.dns.external }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.appName }}-external
+  namespace: {{ .Release.Namespace }}
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: {{ .Values.appName }}.{{ .Values.dns.external }}
+    http:
+      paths:
+      - pathType: Prefix
+        path: /
+        backend:
+          service:
+            name: {{ .Values.appName }}
+            port:
+              number: 80
+{{ end }}

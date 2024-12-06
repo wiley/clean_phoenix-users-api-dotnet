@@ -1,0 +1,22 @@
+@startuml
+!theme bluegray
+group Service Initialized Auth
+    UserBrowser -> CatalystFE: Authentication Init : c.ed.com/auth/init/{federation_name}
+    CatalystFE -> CatalystBE: Authentication Request: usersapi/auth/init/{federation_name}
+    CatalystBE -> CatalystFE: Gets Authentication URL redirect
+    CatalystFE -> UserBrowser: Redirects for auth
+end
+group Federated Authentication
+    UserBrowser -> FederatedAuth: Request Login Box / SSO auth from IdP
+    FederatedAuth -> FederatedAuth: Authenticate User
+    FederatedAuth -> UserBrowser: Redirect to redirect_uri with code c.ed.com/auth/callback/{federation_name}
+end
+group Code Validation and token exchange
+    CatalystFE -> CatalystBE: Ask for JWT with code usersapi/auth/callback/{federation_name}/?state+code
+    CatalystBE -> FederatedAuth: Ask for JWT token (oidc token endpoint) with state and code
+    FederatedAuth -> FederatedAuth: Exchange code and signs token
+    FederatedAuth -> CatalystBE: Returns Original JWT from federated auth
+    CatalystBE -> CatalystFE: Exchange Federated JWT to catalyst JWT
+    CatalystFE <- CatalystFE: Redirects user to home
+end
+@enduml

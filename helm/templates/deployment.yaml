@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.appName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{ end }}
+  selector:
+    matchLabels:
+      app: {{ .Values.appName }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.appName }}
+      annotations:
+        rollme: {{ randAlphaNum 5 | quote }}
+        {{- if .Values.podAnnotations }}
+        {{ toYaml .Values.podAnnotations | indent 8}}
+        {{- end }}
+    spec:
+      containers:
+      - name: {{ .Values.appName }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.service.port }}
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 2
+        startupProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          failureThreshold: 12
+          periodSeconds: 5
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+        env:
+          {{- range $data := .Values.externalsecrets.data}}
+          - name: {{ $data.nameValue}}
+            valueFrom:
+              secretKeyRef:
+                name: {{ $.Values.appName }}-external-secrets
+                key: {{ $data.nameValue}}
+          {{- end }}
+        envFrom:
+          - configMapRef:
+              name: {{ .Values.appName }}-env

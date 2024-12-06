@@ -1,0 +1,57 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+	<TargetFramework>net6.0</TargetFramework>
+	<RuntimeFrameworkVersion>6.0.9</RuntimeFrameworkVersion>
+	<UserSecretsId>96090404-0801-4cce-a9b1-105d19f2defe</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Migrations\20210216200250_AddOrganizationID.cs" />
+    <Compile Remove="Migrations\20210216200250_AddOrganizationID.Designer.cs" />
+    <Compile Remove="Migrations\20210217201408_UserRoleTables.cs" />
+    <Compile Remove="Migrations\20210217201408_UserRoleTables.Designer.cs" />
+    <Compile Remove="Migrations\20220224204326_FederationStringLimitations.cs" />
+    <Compile Remove="Migrations\20220224204326_FederationStringLimitations.Designer.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--<PackageReference Include="Microsoft.AspNetCore.All" />-->
+    <PackageReference Include="DarwinAuthorization" Version="1.0.8" />
+    <PackageReference Include="Keycloak.AuthServices.Authentication" Version="1.2.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.12" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="5.0.10" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="4.1.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning.ApiExplorer" Version="4.1.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.12">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="2.1.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.1" />
+    <!--<PackageReference Include="NSwag.AspNetCore" Version="11.19.2" />-->
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="6.0.2" />
+    <PackageReference Include="Refit" Version="4.6.30" />
+    <PackageReference Include="Serilog" Version="2.7.1" />
+    <PackageReference Include="Serilog.AspNetCore" Version="2.1.1" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="3.1.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
+    <PackageReference Include="Serilog.Sinks.ElasticSearch" Version="6.5.0" />
+    <PackageReference Include="StackExchange.Redis" Version="2.2.50" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.2" />
+    <PackageReference Include="WLS.KafkaMessenger" Version="5.4.0" />
+    <PackageReference Include="WLS.Log.LoggerTransactionPattern" Version="5.0.0" />
+    <PackageReference Include="WLS.Monitoring.HealthCheck" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WLSUser.Domain\WLSUser.Domain.csproj" />
+    <ProjectReference Include="..\WLSUser.Services\WLSUser.Services.csproj" />
+  </ItemGroup>
+
+</Project>

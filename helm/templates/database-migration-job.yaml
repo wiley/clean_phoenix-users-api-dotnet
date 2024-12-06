@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.appName }}-database-migration-job
+  annotations:
+    "helm.sh/hook": pre-upgrade
+    "helm.sh/hook-weight": "2"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  parallelism: 1
+  completions: 1
+  backoffLimit: 1
+  template:
+    metadata:
+        annotations:
+          # disable istio on the pod due to this issue:
+          # https://github.com/istio/istio/issues/11659
+          sidecar.istio.io/inject: "false" 
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: {{ .Values.appName }}-database-migration-job
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/app/efbundle"]
+          env:
+            {{- range $data := .Values.externalsecrets.data}}
+            - name: {{ $data.nameValue}}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.appName }}-external-secrets
+                  key: {{ $data.nameValue }}
+            {{- end }}
+            - name: USERSAPI_CONNECTION_STRING_PREFIX
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.appName }}-external-secrets
+                  key: USERSAPI_CONNECTION_STRING
+            - name: ConnectionStrings__UserDbContext
+              value: $(USERSAPI_CONNECTION_STRING_PREFIX);
+            - name: USERSAPI_CONNECTION_COMMANDTIMEOUT
+              value: "360000"
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.appName }}-env

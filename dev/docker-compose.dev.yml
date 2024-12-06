@@ -1,0 +1,12 @@
+version: '3.8'
+
+include:
+  - docker-compose.base.yml
+
+services:
+  users-api:
+    extends:
+      file: docker-compose.lib.yml
+      service: users-api
+    ports:
+      - "50103:50103"

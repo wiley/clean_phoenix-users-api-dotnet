@@ -1,0 +1,10 @@
+Thank you for installing {{ .Chart.Name }}.
+
+Your release is named {{ .Chart.Name }} is currently running image {{ .Values.image.repository }}:{{ .Values.image.tag }}
+
+{{- if .Values.dns.external }}
+External URL: https://{{ .Values.appName }}.{{ .Release.Namespace }}.{{ .Values.dns.external }}
+{{ end }}
+{{- if .Values.dns.internal }}
+Internal URL: http://{{ .Values.appName }}.{{ .Release.Namespace }}.{{ .Values.dns.internal }}
+{{ end }}

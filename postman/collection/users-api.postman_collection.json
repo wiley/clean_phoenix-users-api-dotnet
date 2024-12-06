@@ -1,0 +1,458 @@
+{
+	"info": {
+		"_postman_id": "e4aa37da-3cdf-4fcb-bdad-586b0f838540",
+		"name": "Users API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "7811012"
+	},
+	"item": [
+		{
+			"name": "User",
+			"item": [
+				{
+					"name": "User Create",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"if (pm.response.code==200) {\r",
+									"    var jsonData = pm.response.json();\r",
+									"    let id = jsonData.id;\r",
+									"    pm.environment.set(\"user_id\", id);\r",
+									"    console.log(\"User ID: \" + id);\r",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"firstName\": \"Anji\",\r\n  \"lastName\": \"Zhu\",\r\n  \"password\": \"epistema\",\r\n  \"username\": \"azhu@ck.com\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{users_domain}}/api/v4/users/",
+							"host": [
+								"{{users_domain}}"
+							],
+							"path": [
+								"api",
+								"v4",
+								"users",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User Delete",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "{{users_api_key}}",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "X-API-Key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{users_domain}}/api/v4/users/4/",
+							"host": [
+								"{{users_domain}}"
+							],
+							"path": [
+								"api",
+								"v4",
+								"users",
+								"4",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User Get",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "{{users_api_key}}",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "X-API-Key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{users_domain}}/api/v4/users/{{user_id}}/",
+							"host": [
+								"{{users_domain}}"
+							],
+							"path": [
+								"api",
+								"v4",
+								"users",
+								"{{user_id}}",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"var jsonData = pm.response.json();\r",
+									"\r",
+									"pm.environment.set(\"phoenix_access_token\", jsonData.access_token);\r",
+									"pm.environment.set(\"phoenix_refresh_token\", jsonData.refresh_token);\r",
+									"\r",
+									"\r",
+									"let jwt = jsonData.access_token\r",
+									"jwtParts = jwt.split('.');\r",
+									"var words = CryptoJS.enc.Base64.parse(jwtParts[1]);\r",
+									"var textString = CryptoJS.enc.Utf8.stringify(words);\r",
+									"\r",
+									"jwtData = JSON.parse(textString)\r",
+									"\r",
+									"let userId = jwtData.user_id\r",
+									"pm.environment.set(\"user_id\", userId)\r",
+									"console.log(\"User ID: \" + userId)"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"password\": \"epistema\",\r\n  \"username\": \"admin@ck.com\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{users_domain}}/api/v4/users/login",
+							"host": [
+								"{{users_domain}}"
+							],
+							"path": [
+								"api",
+								"v4",
+								"users",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User Search",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"azhu@ck.com\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{users_domain}}/api/v4/users/search",
+							"host": [
+								"{{users_domain}}"
+							],
+							"path": [
+								"api",
+								"v4",
+								"users",
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User Update",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"username\": \"sample@test.com\",\r\n    \"firstName\": \"samplefirst\",\r\n    \"lastName\": \"samplelast\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{users_domain}}/api/v4/users/{{user_id}}/",
+							"host": [
+								"{{users_domain}}"
+							],
+							"path": [
+								"api",
+								"v4",
+								"users",
+								"{{user_id}}",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "User Mapping",
+			"item": [
+				{
+					"name": "User Mapping Create",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"if (pm.response.code==200) {\r",
+									"    var jsonData = pm.response.json();\r",
+									"    let id = jsonData.id;\r",
+									"    pm.environment.set(\"user_mapping_id\", id);\r",
+									"    console.log(\"User Mapping ID: \" + id);\r",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"platformUserId\": \"user123\",\r\n  \"platformAccountId\": \"a56f5a53-6c65-4569-9a24-9c3f3579eb6d\",\r\n  \"platformName\": \"epic\",\r\n  \"platformCustomer\": \"singleton | ck instance customer\",\r\n  \"platformRole\": \"learner\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{users_domain}}/api/v4/users/{{user_id}}/user-mappings",
+							"host": [
+								"{{users_domain}}"
+							],
+							"path": [
+								"api",
+								"v4",
+								"users",
+								"{{user_id}}",
+								"user-mappings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User Mapping Delete",
+					"request": {
+						"auth": {
+							"type": "apikey",
+							"apikey": [
+								{
+									"key": "value",
+									"value": "{{users_api_key}}",
+									"type": "string"
+								},
+								{
+									"key": "key",
+									"value": "X-API-Key",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{users_domain}}/api/v4/users/{{user_id}}/user-mappings/{{user_mapping_id}}",
+							"host": [
+								"{{users_domain}}"
+							],
+							"path": [
+								"api",
+								"v4",
+								"users",
+								"{{user_id}}",
+								"user-mappings",
+								"{{user_mapping_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User Mapping Get",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{users_domain}}/api/v4/users/{{user_id}}/user-mappings/{{user_mapping_id}}",
+							"host": [
+								"{{users_domain}}"
+							],
+							"path": [
+								"api",
+								"v4",
+								"users",
+								"{{user_id}}",
+								"user-mappings",
+								"{{user_mapping_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User Mapping List",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{users_domain}}/api/v4/users/{{user_id}}/user-mappings",
+							"host": [
+								"{{users_domain}}"
+							],
+							"path": [
+								"api",
+								"v4",
+								"users",
+								"{{user_id}}",
+								"user-mappings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User Mapping Update",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"platformUserId\": \"user456\",\r\n    \"platformAccountId\": \"a56f5a53-6c65-4569-9a24-9c3f3579eb6c\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{users_domain}}/api/v4/users/{{user_id}}/user-mappings/{{user_mapping_id}}",
+							"host": [
+								"{{users_domain}}"
+							],
+							"path": [
+								"api",
+								"v4",
+								"users",
+								"{{user_id}}",
+								"user-mappings",
+								"{{user_mapping_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "apikey",
+		"apikey": [
+			{
+				"key": "value",
+				"value": "{{users_api_key}}",
+				"type": "string"
+			},
+			{
+				"key": "key",
+				"value": "X-API-Key",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

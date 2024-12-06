@@ -1,0 +1,10 @@
+version: '3.8'
+
+networks:
+  default:
+    name: crossknowledge-network
+    external: true
+
+volumes:
+  nuget_packages:
+  nuget_cache:
